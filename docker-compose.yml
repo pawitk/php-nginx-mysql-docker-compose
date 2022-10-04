@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./html:/var/www/html
+      - ./config/nginx/site.conf:/etc/nginx/conf.d/site.conf
+      - ./config/nginx/fastcgi-php.conf:/etc/nginx/snippets/fastcgi-php.conf
+      - ./config/nginx/fastcgi.conf:/etc/nginx/fastcgi.conf
+      - ./certbot/conf:/etc/letsencrypt
+    links:
+      - php
+
+  php:
+    # image: php:7.4-fpm
+    build: .
+    volumes:
+      - ./html:/var/www/html
+    links:
+      - mysql
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./html:/var/www/html:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+
+  mysql:
+    image: mysql:8
+    volumes:
+      - ./html:/var/www/html
+      - ./dbdata:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
